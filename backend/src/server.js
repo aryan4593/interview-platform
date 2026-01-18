@@ -2,11 +2,25 @@ import express from "express"
 import path, { dirname } from "path"
 import { ENV } from "./lib/env.js";
 import { connectDB } from "./lib/db.js";
-
+import cors from "cors"
+import {serve} from "inngest/express"
+import { inngest,functions} from "./lib/inngest.js";
 const app = express();
 
 const __dirname = path.resolve();
 
+//middlewares
+app.use(express.json());
+app.use(cors({origin:ENV.CLIENT_URL, credentials:true})); //credetial true means server allows cookies on request
+
+app.use("/api/ingest", serve({client:inngest, functions}))
+
+app.get("/health", (req, res)=>{
+    res.status(200).json({msg:"API is up and running"});
+});
+app.get("/books", (req, res)=>{
+    res.status(200).json({msg:"books endpoint"});
+});
 
 //Make this app deployment ready
 if(ENV.NODE_ENV === "production"){
@@ -16,13 +30,6 @@ if(ENV.NODE_ENV === "production"){
         res.sendFile(path.join(__dirname, "../frontend/dist"));
     })
 }
-
-app.get("/health", (req, res)=>{
-    res.status(200).json({msg:"API is up and running"});
-});
-app.get("/books", (req, res)=>{
-    res.status(200).json({msg:"books endpoint"});
-});
 console.log(ENV.PORT)
 
 
