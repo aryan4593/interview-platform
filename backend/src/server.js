@@ -1,6 +1,7 @@
 import express from "express"
 import path, { dirname } from "path"
 import { ENV } from "./lib/env.js";
+import { connectDB } from "./lib/db.js";
 
 const app = express();
 
@@ -23,4 +24,17 @@ app.get("/books", (req, res)=>{
     res.status(200).json({msg:"books endpoint"});
 });
 console.log(ENV.PORT)
-app.listen(ENV.PORT,()=>{console.log(`server is running on http://localhost:${ENV.PORT}`)})
+
+
+const startSever = async ()=>{
+    try {
+        connectDB();
+        app.listen(ENV.PORT,()=>{
+            console.log(`server is running on http://localhost:${ENV.PORT}`)
+        })
+    } catch (error) {
+        console.error("Error starting the server ", error);
+    }
+}
+
+startSever();
