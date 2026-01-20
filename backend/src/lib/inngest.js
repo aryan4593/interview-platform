@@ -1,12 +1,10 @@
 import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
 import User from "../models/User.js";
+import { deleteStreamUser, upsertStreamUser } from "./stream.js";
 
 export const inngest = new Inngest({ id: "NextRound" });
 
-/**
- * Sync user on Clerk user creation
- */
 const syncUser = inngest.createFunction(
   { id: "sync-user" },
   { event: "clerk/user.created" },
@@ -34,12 +32,14 @@ const syncUser = inngest.createFunction(
       profileImage: image_url,
     };
 
-    // Idempotent write (safe for retries)
-    await User.findOneAndUpdate(
-      { clerkId: id },
-      newUser,
-      { upsert: true, new: true }
-    );
+   
+    await User.create(newUser);
+
+    await upsertStreamUser({
+      id: newUser.clerkId.toString(),
+      name : newUser.name,
+      image:newUser.profileImage
+    });
   }
 );
 
@@ -51,6 +51,7 @@ const deleteUserFromDB = inngest.createFunction(
 
     const { id } = event.data;
     await User.deleteOne({ clerkId: id });
+    await deleteStreamUser(id,toString());
   }
 );
 
