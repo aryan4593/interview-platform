@@ -5,7 +5,11 @@ import { connectDB } from "./lib/db.js";
 import cors from "cors"
 import {serve} from "inngest/express"
 import { inngest,functions} from "./lib/inngest.js";
+import { clerkMiddleware } from '@clerk/express'
+import { protectRoute } from "./middleware/protectRoute.js";
+import chatRoutes from './routes/chatRoutes.js'
 const app = express();
+
 
 const __dirname = path.resolve();
 
@@ -15,11 +19,13 @@ app.use(cors({origin:ENV.CLIENT_URL, credentials:true})); //credetial true means
 
 app.use("/api/ingest", serve({client:inngest, functions}))
 
+app.use(clerkMiddleware()); //this add auth field to request object: req.auth()
 app.get("/health", (req, res)=>{
     res.status(200).json({msg:"API is up and running"});
 });
-app.get("/books", (req, res)=>{
-    res.status(200).json({msg:"books endpoint"});
+app.use("/api/chats",chatRoutes)
+app.get("/video-calls", protectRoute, (req, res)=>{
+    res.status(200).json({msg:"vc endpoint, protected route"});
 });
 
 //Make this app deployment ready
