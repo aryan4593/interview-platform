@@ -8,6 +8,7 @@ import { inngest,functions} from "./lib/inngest.js";
 import { clerkMiddleware } from '@clerk/express'
 import { protectRoute } from "./middleware/protectRoute.js";
 import chatRoutes from './routes/chatRoutes.js'
+import sessionRoutes from './routes/sessionRoute.js'
 const app = express();
 
 
@@ -17,13 +18,16 @@ const __dirname = path.resolve();
 app.use(express.json());
 app.use(cors({origin:ENV.CLIENT_URL, credentials:true})); //credetial true means server allows cookies on request
 
-app.use("/api/ingest", serve({client:inngest, functions}))
 
 app.use(clerkMiddleware()); //this add auth field to request object: req.auth()
 app.get("/health", (req, res)=>{
     res.status(200).json({msg:"API is up and running"});
 });
+
+app.use("/api/ingest", serve({client:inngest, functions}))
 app.use("/api/chats",chatRoutes)
+app.use('/api/sessions', sessionRoutes)
+
 app.get("/video-calls", protectRoute, (req, res)=>{
     res.status(200).json({msg:"vc endpoint, protected route"});
 });
