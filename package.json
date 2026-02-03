@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-       "build": "npm install --prefix backend && cd frontend && npm install --production=false && npm run build",
-       "start": "npm run start --prefix backend"
+    "build": "npm install --prefix backend && cd frontend && npm install --production=false && npm run build",
+    "start": "npm run start --prefix backend"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,8 @@
     "url": "https://github.com/aryan4593/interview-platform/issues"
   },
   "homepage": "https://github.com/aryan4593/interview-platform#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "lucide-react": "^0.563.0"
+  }
 }
