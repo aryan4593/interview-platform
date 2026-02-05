@@ -10,7 +10,7 @@ import { protectRoute } from "./middleware/protectRoute.js";
 import chatRoutes from './routes/chatRoutes.js'
 import sessionRoutes from './routes/sessionRoute.js'
 const app = express();
-
+const PORT = process.env.PORT || ENV.PORT ||  3802;
 
 const __dirname = path.resolve();
 
@@ -40,14 +40,14 @@ if(ENV.NODE_ENV === "production"){
         res.sendFile(path.join(__dirname, "../frontend/dist"));
     })
 }
-console.log(ENV.PORT)
+console.log(PORT)
 
 
 const startSever = async ()=>{
     try {
         connectDB();
-        app.listen(ENV.PORT,()=>{
-            console.log(`server is running on http://localhost:${ENV.PORT}`)
+        app.listen(PORT,()=>{
+            console.log(`server is running on http://localhost:${PORT}`)
         })
     } catch (error) {
         console.error("Error starting the server ", error);
