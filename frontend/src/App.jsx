@@ -8,9 +8,10 @@ import {
   useUser,
 } from "@clerk/clerk-react";
 import {Navigate, Route, Routes} from "react-router"
-import HomePage from "./pages/homePage.jsx";
-import ProblemPage from "./pages/ProblemPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import ProblemsPage from "./pages/ProblemsPage.jsx";
 import DashBoardPage from "./pages/DashBoardPage.jsx";
+import ProblemPage from "./pages/ProblemPage.jsx";
 function App() {
   const [count, setCount] = useState(0);
   const {isSignedIn, isLoaded} = useUser();
@@ -21,7 +22,8 @@ function App() {
 
       <Route path="/" element={!isSignedIn ?  <HomePage/> : <Navigate to={'/dashboard'}/>}/>
       <Route path="/dashboard" element={isSignedIn ?  <DashBoardPage/> : <HomePage/>}/>
-      <Route path="/problems" element={isSignedIn ?<ProblemPage/> : <Navigate to={"/"}/>}/>
+      <Route path="/problems" element={isSignedIn ?<ProblemsPage/> : <Navigate to={"/"}/>}/>
+      <Route path="/problems/:id" element={isSignedIn ?<ProblemPage/> : <Navigate to={"/"}/>}/>
 
     </Routes>
     </>

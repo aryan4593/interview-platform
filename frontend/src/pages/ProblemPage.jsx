@@ -1,97 +1,155 @@
-import React from "react";
-import Navbar from "../components/Navbar";
-import { PROBLEMS } from "../data/problems";
-import { Link } from "react-router";
-import { ChevronRightIcon, Code2Icon } from "lucide-react";
-import { getDifficultyBadgeClass } from "../lib/utils.js";
+import { useEffect, useState } from "react";
+import {useParams, useNavigate} from "react-router"
+import { PROBLEMS } from "../data/problems.js";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import Navbar from "../components/Navbar.jsx";
+import ProblemDescription from "../components/ProblemDescription.jsx";
+import OutputPanel from "../components/OutputPanel.jsx";
+import CodeEditorPanel from "../components/CodeEditorPanel.jsx";
+import { executeCode } from "../lib/piston.js";
+import toast from "react-hot-toast"
+import confetti from "canvas-confetti";
+
+function ProblemPage() {
+  const {id}= useParams();
+  const navigate = useNavigate();
+  const [currentProblemId, setCurrentProblemId] = useState("two-sum")
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [code, setCode] = useState(PROBLEMS[currentProblemId].starterCode.javascript);
+  const [output, setOutput] = useState(null);
+  const [isRunning, setIsRunning]  = useState(false);
+
+  const currentProblem = PROBLEMS[currentProblemId];
+
+  useEffect(()=>{
+    if(id&& PROBLEMS[id]){
+      setCurrentProblemId(id);
+      setCode(PROBLEMS[id].starterCode[selectedLanguage]);
+      setOutput(null);
+    }
+  },[id,selectedLanguage]);
 
 
-function ProblemsPage() {
-  const problems = Object.values(PROBLEMS);
+  const handleLangugageChange = (e)=>{
+    const newLang = e.target.value;
+    setSelectedLanguage(newLang);
+    setCode(currentProblem.starterCode[newLang]);
+    setOutput(null);
+  };
+  const handleProblemChange = (newProblemId) => navigate(`/problems/${newProblemId}`);
 
-  const easyProblemsCount = problems.filter((p) => p.difficulty === "Easy").length;
-  const mediumProblemsCount = problems.filter((p) => p.difficulty === "Medium").length;
-  const hardProblemsCount = problems.filter((p) => p.difficulty === "Hard").length;
+  const triggerConfetti = ()=>{
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.2, y: 0.6 },
+    });
 
+    confetti({
+      particleCount: 80,
+      spread: 250,
+      origin: { x: 0.8, y: 0.6 },
+    });
+
+  };
+    const normalizeOutput = (output) => {
+    // normalize output for comparison (trim whitespace, handle different spacing)
+    return output
+      .trim()
+      .split("\n")
+      .map((line) =>
+        line
+          .trim()
+          // remove spaces after [ and before ]
+          .replace(/\[\s+/g, "[")
+          .replace(/\s+\]/g, "]")
+          // normalize spaces around commas to single space after comma
+          .replace(/\s*,\s*/g, ",")
+      )
+      .filter((line) => line.length > 0)
+      .join("\n");
+  };
+
+  const checkIfTestPassed = (actualOutput,  expectedOutput)=>{
+    const normalizedActual = normalizeOutput(actualOutput);
+    const normalizedExpected = normalizeOutput(expectedOutput);
+
+    return normalizedActual == normalizedExpected;
+  };
+  const handleRunCode = async ()=>{
+    setIsRunning(true);
+    setOutput(null);
+
+    const result = await executeCode(selectedLanguage,code);
+    setOutput(result);
+    setIsRunning(false);
+    // console.log(result);
+
+    if(result.success){
+      
+      const expectedOutput = currentProblem.expectedOutput[selectedLanguage];
+      const testPassed = checkIfTestPassed(result.output,expectedOutput);
+
+      if(testPassed){
+        triggerConfetti();
+        toast.success("All test cases passed!!!")
+      } else{
+        toast.error("Test failed! Check your code and output!")
+      }
+    }
+    else{
+      toast.error("Code execution failed")
+    }
+
+
+
+  };
   return (
-    <div className="min-h-screen bg-base-200">
-      <Navbar />
+    <div className="h-screen bg-base-100 flex flex-col">
+      <Navbar/>
+      <div className="flex-1">
+        <PanelGroup direction="horizontal">
+          {/* left problem */}
+          <Panel defaultSize={40} minSize={20}>
+            <ProblemDescription
+              problem = {currentProblem}
+              currentProblemId = {currentProblemId}
+              onProblemChange = {handleProblemChange}
+              allProblems = {Object.values(PROBLEMS)}
+            />
+          </Panel>
 
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Practice Problems</h1>
-          <p className="text-base-content/70">
-            Sharpen your coding skills with these curated problems
-          </p>
-        </div>
+          <PanelResizeHandle className="w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize" />
+          {/* right problem */}
+          <Panel defaultSize={60} minSize={20}>
+            <PanelGroup direction="vertical">
+              <Panel defaultSize={70} minSize={30}>
+                <CodeEditorPanel 
+                  selectedLanguage = {selectedLanguage}
+                  code = {code}
+                  isRunning = {isRunning}
+                  onLanguageChange = {handleLangugageChange}
+                  onCodeChange = {setCode}
+                  onRunCode = {handleRunCode}
+                />
+              </Panel>
 
-        {/* PROBLEMS LIST */}
-        <div className="space-y-4">
-          {problems.map((problem) => (
-            <Link
-              key={problem.id}
-              to={`/problem/${problem.id}`}
-              className="card bg-base-100 hover:scale-[1.01] transition-transform"
-            >
-              <div className="card-body">
-                <div className="flex items-center justify-between gap-4">
-                  {/* LEFT SIDE */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Code2Icon className="size-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h2 className="text-xl font-bold">{problem.title}</h2>
-                          <span className={`badge ${getDifficultyBadgeClass(problem.difficulty)}`}>
-                            {problem.difficulty}
-                          </span>
-                        </div>
-                        <p className="text-sm text-base-content/60"> {problem.category}</p>
-                      </div>
-                    </div>
-                    <p className="text-base-content/80 mb-3">{problem.description.text}</p>
-                  </div>
-                  {/* RIGHT SIDE */}
+              <PanelResizeHandle className="h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize" />
 
-                  <div className="flex items-center gap-2 text-primary">
-                    <span className="font-medium">Solve</span>
-                    <ChevronRightIcon className="size-5" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              <Panel defaultSize={30} minSize={30}>
+                <OutputPanel
+                  output = {output}
+                />
+              </Panel>
 
-        {/* STATS FOOTER */}
-        <div className="mt-12 card bg-base-100 shadow-lg">
-          <div className="card-body">
-            <div className="stats stats-vertical lg:stats-horizontal">
-              <div className="stat">
-                <div className="stat-title">Total Problems</div>
-                <div className="stat-value text-primary">{problems.length}</div>
-              </div>
-
-              <div className="stat">
-                <div className="stat-title">Easy</div>
-                <div className="stat-value text-success">{easyProblemsCount}</div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Medium</div>
-                <div className="stat-value text-warning">{mediumProblemsCount}</div>
-              </div>
-              <div className="stat">
-                <div className="stat-title">Hard</div>
-                <div className="stat-value text-error">{hardProblemsCount}</div>
-              </div>
-            </div>
-          </div>
-        </div>
+            </PanelGroup>
+          </Panel>
+            
+        </PanelGroup>
       </div>
+      
     </div>
-  );
+  )
 }
-export default ProblemsPage;
+
+export default ProblemPage
