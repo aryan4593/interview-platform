@@ -15,16 +15,16 @@ const sessionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref:"User",
         required:true
+    },status: {
+      type: String,
+      enum: ["active", "completed"],
+      default: "active",
     },
     participant:{
         type: mongoose.Schema.Types.ObjectId,
         ref:"User",
         default:null,
-        status:{
-            type:String,
-            enum:["active", "complete"],
-            default:"active"
-        }
+
     },
     //stream video call id
     callId:{

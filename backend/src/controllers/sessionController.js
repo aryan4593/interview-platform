@@ -26,14 +26,14 @@ export async function createSession(req,res) {
 
         //chat msging
 
-        const channel = chatClient.channel("messeging",callId,{
+        const channel = chatClient.channel("messaging",callId,{
             name:`${problem} Session`,
-            created_by:clerkId,
+            created_by_id:clerkId,
             members:[clerkId]
         });
 
         await channel.create();
-
+        // console.log("session created successfully", session);
         res.status(201).json({session});
 
     } catch (error) {
@@ -44,9 +44,8 @@ export async function createSession(req,res) {
 
 export async function getActiveSessions(_,res) {
     try {
-       const sessions = await Session.find({status:"active"}).populate("host", "name profileImage email clerkId")
-       .sort({createdAt:-1}).limit(20);
-
+       const sessions = await Session.find({status:"active"}).populate("host", "name profileImage email clerkId").populate("participant", "name profileImage email clerkId").sort({createdAt:-1}).limit(20);
+        // console.log(sessions);
        res.status(200).json({sessions})
 
     } catch (error) {
@@ -79,7 +78,7 @@ export async function getSessionById(req,res) {
         .populate("participant", "name email profileImage clerkId");
 
 
-        if(!session) res.status(404).json({message:"status not found"});
+        if(!session) return res.status(404).json({message:"status not found"});
 
         res.status(200).json({session});
     } catch (error) {
