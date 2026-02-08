@@ -20,15 +20,15 @@ export const sessionApi = {
         return response.data;
     },
     joinSession: async (id)=>{
-        const response = await axiosInstance.post(`/sessions/${id}`);
+        const response = await axiosInstance.post(`/sessions/${id}/join`);
         return response.data;
     },
-    joinSession: async (id)=>{
+    endSession: async (id)=>{
         const response = await axiosInstance.post(`/sessions/${id}/end`);
         return response.data;
     },
     getStreamToken: async ()=>{
-        const response = axiosInstance.post(`/chat/token`);
+        const response = await axiosInstance.get(`/chats/token`);
         return response.data;
     },
 
