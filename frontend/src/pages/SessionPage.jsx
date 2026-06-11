@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   useEndSession,
@@ -17,6 +17,7 @@ import OutputPanel from "../components/OutputPanel.jsx";
 import useStreamClient from "../hooks/useStreamClient.js";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI.jsx";
+import debounce from "lodash/debounce";
 
 function SessionPage() {
   const { id } = useParams();
@@ -70,6 +71,55 @@ function SessionPage() {
     if (session.status == "completed") navigate("/dashboard");
   }, [session, sessionLoading, navigate]);
 
+  useEffect(() => {
+    if (!channel) return;
+
+    const handleCodeUpdate = (event) => {
+      
+      if (event.user?.id === chatClient?.userID) return;
+      // console.log("SETTING CODE", event.code);
+
+      setCode(event.code);
+    };
+
+    channel.on("code-update", handleCodeUpdate);
+
+    return () => {
+      channel.off("code-update", handleCodeUpdate);
+    };
+  }, [channel, chatClient]);
+
+  // useEffect(() => {
+  //   console.log("CODE STATE CHANGED:", code);
+  // }, [code]);
+
+  useEffect(() => {
+    if (!channel) return;
+
+    const listener = (event) => {
+      // console.log("RECEIVED", event.type, event);
+    };
+
+    channel.on(listener);
+
+    return () => channel.off(listener);
+  }, [channel]);
+
+  const sendCodeUpdate = React.useMemo(
+    () =>
+      debounce(async (value) => {
+        if (!channel) return;
+
+        await channel?.sendEvent({
+          type: "code-update",
+          code: value,
+        });
+
+      }, 300),
+    [channel]
+  );
+
+
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
@@ -98,6 +148,8 @@ function SessionPage() {
       });
     }
   };
+
+  // console.log("loading......");
 
   return (
     <div className="h-screen bg-base-100 flex flex-col">
@@ -256,7 +308,11 @@ function SessionPage() {
                     code={code}
                     isRunning={isRunning}
                     onLanguageChange={handleLanguageChange}
-                    onCodeChange={(value) => setCode(value)}
+                    onCodeChange={async (value) => {
+                                    setCode(value);
+                                    // console.log("SENDING", value);
+                                    sendCodeUpdate(value);
+                                  }}
                     onRunCode={handleRunCode}
                   />
                 </Panel>
